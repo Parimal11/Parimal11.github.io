@@ -229,6 +229,20 @@
             margin: 0 auto 1rem;
             font-size: 3rem;
             color: white;
+            overflow: hidden;
+            border: 4px solid white;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        .profile-avatar.placeholder {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
         .contact-info {
@@ -553,7 +567,8 @@
             <div class="about-content fade-in">
                 <div class="about-image">
                     <div class="profile-card">
-                        <div class="profile-avatar">
+                        <div class="profile-avatar" id="profileAvatar">
+                            <!-- Profile image will be loaded here -->
                             <i class="fas fa-user"></i>
                         </div>
                         <h3>Parimal Deshmukh</h3>
@@ -564,6 +579,9 @@
                             <a href="mailto:anshuldeshmukh6323@gmail.com"><i class="fas fa-envelope"></i> anshuldeshmukh6323@gmail.com</a>
                             <a href="#"><i class="fas fa-map-marker-alt"></i> Akola, Maharashtra</a>
                         </div>
+                        <a href="#" class="download-resume" id="downloadResume">
+                            <i class="fas fa-download"></i> Download Resume
+                        </a>
                     </div>
                 </div>
                 <div class="about-text">
@@ -811,17 +829,17 @@
                 <div class="contact-item">
                     <i class="fab fa-linkedin"></i>
                     <h3>LinkedIn</h3>
-                    <a href="https://www.linkedin.com/in/parimal-deshmukh-3388aa220/" target="_blank">Connect with me</a>
+                    <a href="#" target="_blank">Connect with me</a>
                 </div>
                 <div class="contact-item">
                     <i class="fab fa-github"></i>
                     <h3>GitHub</h3>
-                    <a href="https://github.com/Parimal11" target="_blank">View my code</a>
+                    <a href="#" target="_blank">View my code</a>
                 </div>
                 <div class="contact-item">
                     <i class="fas fa-code"></i>
                     <h3>GeeksforGeeks</h3>
-                    <a href="https://www.geeksforgeeks.org/user/parimal11/" target="_blank">Coding Profile</a>
+                    <a href="#" target="_blank">Coding Profile</a>
                 </div>
                 <div class="contact-item">
                     <i class="fas fa-map-marker-alt"></i>
@@ -1083,6 +1101,161 @@
         }
 
         createBackToTop();
+
+        // Image upload and resume functionality
+        function setupImageAndResume() {
+            const profileAvatar = document.getElementById('profileAvatar');
+            const downloadResume = document.getElementById('downloadResume');
+            
+            // Create file input for image upload (hidden)
+            const imageInput = document.createElement('input');
+            imageInput.type = 'file';
+            imageInput.accept = 'image/*';
+            imageInput.style.display = 'none';
+            document.body.appendChild(imageInput);
+            
+            // Create file input for resume upload (hidden)
+            const resumeInput = document.createElement('input');
+            resumeInput.type = 'file';
+            resumeInput.accept = '.pdf,.doc,.docx';
+            resumeInput.style.display = 'none';
+            document.body.appendChild(resumeInput);
+            
+            // Load saved image from memory
+            const savedImage = sessionStorage.getItem('profileImage');
+            if (savedImage) {
+                const img = document.createElement('img');
+                img.src = savedImage;
+                img.alt = 'Parimal Deshmukh';
+                profileAvatar.innerHTML = '';
+                profileAvatar.appendChild(img);
+                profileAvatar.classList.remove('placeholder');
+            }
+            
+            // Load saved resume info
+            const savedResume = sessionStorage.getItem('resumeData');
+            if (savedResume) {
+                const resumeData = JSON.parse(savedResume);
+                downloadResume.onclick = function(e) {
+                    e.preventDefault();
+                    const link = document.createElement('a');
+                    link.href = resumeData.url;
+                    link.download = resumeData.name;
+                    link.click();
+                };
+            } else {
+                // If no resume, show upload option
+                downloadResume.onclick = function(e) {
+                    e.preventDefault();
+                    resumeInput.click();
+                };
+                downloadResume.innerHTML = '<i class="fas fa-upload"></i> Upload Resume';
+            }
+            
+            // Profile image click handler
+            profileAvatar.style.cursor = 'pointer';
+            profileAvatar.title = 'Click to change profile picture';
+            profileAvatar.addEventListener('click', function() {
+                imageInput.click();
+            });
+            
+            // Handle image upload
+            imageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const imageUrl = e.target.result;
+                        
+                        // Save to session storage
+                        sessionStorage.setItem('profileImage', imageUrl);
+                        
+                        // Update UI
+                        const img = document.createElement('img');
+                        img.src = imageUrl;
+                        img.alt = 'Parimal Deshmukh';
+                        profileAvatar.innerHTML = '';
+                        profileAvatar.appendChild(img);
+                        profileAvatar.classList.remove('placeholder');
+                        
+                        // Show success message
+                        showNotification('Profile picture updated successfully!', 'success');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Handle resume upload
+            resumeInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const resumeUrl = e.target.result;
+                        const resumeData = {
+                            name: file.name,
+                            url: resumeUrl,
+                            type: file.type
+                        };
+                        
+                        // Save to session storage
+                        sessionStorage.setItem('resumeData', JSON.stringify(resumeData));
+                        
+                        // Update download button
+                        downloadResume.innerHTML = '<i class="fas fa-download"></i> Download Resume';
+                        downloadResume.onclick = function(e) {
+                            e.preventDefault();
+                            const link = document.createElement('a');
+                            link.href = resumeUrl;
+                            link.download = file.name;
+                            link.click();
+                        };
+                        
+                        // Show success message
+                        showNotification('Resume uploaded successfully!', 'success');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+        
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 100px;
+                right: 30px;
+                background: ${type === 'success' ? '#4CAF50' : '#2196F3'};
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: 5px;
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideInRight 0.3s ease;
+            `;
+            notification.textContent = message;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideInRight 0.3s ease reverse';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+        
+        // Initialize image and resume functionality
+        setupImageAndResume();
 
         // Console message for developers
         console.log(`
